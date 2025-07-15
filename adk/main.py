@@ -222,17 +222,22 @@ async def startup_event():
     if not TELEGRAM_BOT_TOKEN:
         logger.error("TELEGRAM_BOT_TOKEN environment variable not set.")
         sys.exit(1)
-
+        
+    if not os.getenv("TELEGRAM_CONNECT_URL"):
+        logger.error("TELEGRAM_CONNECT_URL environment variable not set.")
+        sys.exit(1)
     logger.info("--- FastAPI Web Server for ADK Demo (with Telegram) Started ---")
     logger.info("Access your web chat UI at: http://127.0.0.1:8000/")
     logger.info("Access interactive API docs (Swagger UI) at: http://127.0.0.1:8000/docs")
     logger.info("To enable Telegram webhook, you need a public URL (e.g., via ngrok) and then run the set_webhook_url function.")
-    
+    set_telegram_webhook(os.getenv("TELEGRAM_CONNECT_URL"))
+    get_telegram_webhook_info()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await telegram_http_client.aclose()
     logger.info("FastAPI application shutting down. HTTPX client closed.")
+    delete_telegram_webhook()
     
     
 
