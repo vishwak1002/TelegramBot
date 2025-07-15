@@ -230,14 +230,14 @@ async def startup_event():
     logger.info("Access your web chat UI at: http://127.0.0.1:8000/")
     logger.info("Access interactive API docs (Swagger UI) at: http://127.0.0.1:8000/docs")
     logger.info("To enable Telegram webhook, you need a public URL (e.g., via ngrok) and then run the set_webhook_url function.")
-    set_telegram_webhook(os.getenv("TELEGRAM_CONNECT_URL"))
-    get_telegram_webhook_info()
+    await set_telegram_webhook(os.getenv("TELEGRAM_CONNECT_URL"))
+    await get_telegram_webhook_info()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await telegram_http_client.aclose()
     logger.info("FastAPI application shutting down. HTTPX client closed.")
-    delete_telegram_webhook()
+    await delete_telegram_webhook()
     
     
 
