@@ -85,7 +85,7 @@ class TelegramUpdate(BaseModel):
 
 # --- FastAPI Client for outbound Telegram API calls ---
 # Use httpx.AsyncClient for efficient asynchronous requests
-telegram_http_client = httpx.AsyncClient()
+
 
 # --- Utility function to send messages to Telegram ---
 async def send_telegram_message(chat_id: int, text: str):
@@ -95,15 +95,20 @@ async def send_telegram_message(chat_id: int, text: str):
         "text": text
     }
     try:
+        telegram_http_client = httpx.AsyncClient()
         response = await telegram_http_client.post(url, json=payload, timeout=10)
         response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
         logger.info(f"Sent message to Telegram chat {chat_id}: {text}")
+        await telegram_http_client.aclose()
     except httpx.HTTPStatusError as e:
         logger.error(f"Telegram API responded with error {e.response.status_code} for chat {chat_id}: {e.response.text}")
+        await telegram_http_client.aclose()
         raise
     except httpx.RequestError as e:
         logger.error(f"An error occurred while requesting Telegram API for chat {chat_id}: {e}")
+        await telegram_http_client.aclose()
         raise
+   
 
 # --- Telegram Webhook Endpoint ---
 @app.post("/telegram-webhook", summary="Telegram Bot Webhook endpoint")
@@ -191,6 +196,7 @@ async def telegram_webhook(update: TelegramUpdate):
         await send_telegram_message(chat_id, f"Received callback: {callback_data}") # Basic acknowledgement
 
     # Telegram expects a 200 OK response quickly
+
     return Response(status_code=200)
 
 
@@ -235,9 +241,9 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await telegram_http_client.aclose()
+    
     logger.info("FastAPI application shutting down. HTTPX client closed.")
-    await delete_telegram_webhook()
+    
     
     
 
